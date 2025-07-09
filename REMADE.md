@@ -46,13 +46,11 @@ pythonw main.py
 pip install pyinstaller
 ```
 
-然后执行：
+---
 
-```
-make build
-```
+### 4.构建喝水小助手：
 
-生成的可执行文件在 `dist/WaterReminder.exe`
+双击 `build.bat`，生成的程序会出现在 `dist\DrinkHelper.exe`。
 
 ---
 
