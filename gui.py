@@ -2,9 +2,9 @@ import sys
 import os
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QTimeEdit, QTextEdit, QPushButton, QMessageBox,
-    QSystemTrayIcon, QMenu
+    QSystemTrayIcon, QMenu, QApplication
 )
-from PyQt6.QtGui import QIcon, QAction
+from PyQt6.QtGui import QIcon, QAction  # QAction 要从这里导入
 from PyQt6.QtCore import QTime, Qt
 from reminder import Reminder
 
@@ -39,6 +39,9 @@ class WaterReminderWindow(QWidget):
         icon_path = os.path.join(base_path, 'assets', 'icon.ico')
 
         self.tray_icon = QSystemTrayIcon(QIcon(icon_path), self)
+        self.tray_icon.setToolTip("喝水小助手")
+
+        # 托盘菜单
         tray_menu = QMenu()
 
         show_action = QAction("显示主界面")
@@ -53,8 +56,10 @@ class WaterReminderWindow(QWidget):
         self.tray_icon.setContextMenu(tray_menu)
         self.tray_icon.show()
 
-        # 启动隐藏窗口，实现后台运行
-        # self.hide()
+        # 托盘图标双击恢复窗口
+        self.tray_icon.activated.connect(self.on_tray_activated)
+
+        # 启动时显示窗口（也可以改成self.hide()实现开机后台运行）
         self.show()
 
     def start_reminder(self):
@@ -69,6 +74,27 @@ class WaterReminderWindow(QWidget):
         msg.setText(f"提醒已设置为每天 {time.toString('HH:mm')}")
         msg.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint)
         msg.exec()
+
+    def closeEvent(self, event):
+        """
+        重写窗口关闭事件，关闭时隐藏窗口到托盘，程序继续运行
+        """
+        event.ignore()  # 忽略关闭事件，不退出程序
+        self.hide()     # 隐藏窗口
+        self.tray_icon.showMessage(
+            "喝水小助手",
+            "程序已最小化到托盘，双击图标可恢复窗口",
+            QSystemTrayIcon.MessageIcon.Information,
+            3000
+        )
+
+    def on_tray_activated(self, reason):
+        """
+        托盘图标被激活时（点击、双击等）
+        双击托盘图标恢复窗口
+        """
+        if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
+            self.show_window()
 
     def show_window(self):
         self.show()
