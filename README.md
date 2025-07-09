@@ -50,7 +50,7 @@ pip install pyinstaller
 
 ### 4.构建喝水小助手：
 
-双击 `build.bat`，生成的程序会出现在 `dist\DrinkHelper.exe`。
+双击 `build.cmd`，生成的程序会出现在 `dist\DrinkHelper.exe`。
 
 ---
 
