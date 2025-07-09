@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QTimeEdit, QTextEdit, QPushButton, QMessageBox,
     QSystemTrayIcon, QMenu, QApplication
 )
-from PyQt6.QtGui import QIcon, QAction  # QAction 要从这里导入
+from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtCore import QTime, Qt
 from reminder import Reminder
 
@@ -14,52 +14,46 @@ class WaterReminderWindow(QWidget):
         self.setWindowTitle("喝水小助手")
         self.resize(300, 200)
 
-        self.layout = QVBoxLayout()
-
+        # 布局
+        layout = QVBoxLayout()
         self.time_edit = QTimeEdit()
         self.time_edit.setDisplayFormat("HH:mm")
         self.time_edit.setTime(QTime.currentTime())
-
         self.text_edit = QTextEdit()
         self.text_edit.setPlaceholderText("输入提醒内容")
-
         self.start_btn = QPushButton("开始提醒")
         self.start_btn.clicked.connect(self.start_reminder)
 
-        self.layout.addWidget(self.time_edit)
-        self.layout.addWidget(self.text_edit)
-        self.layout.addWidget(self.start_btn)
-
-        self.setLayout(self.layout)
+        layout.addWidget(self.time_edit)
+        layout.addWidget(self.text_edit)
+        layout.addWidget(self.start_btn)
+        self.setLayout(layout)
 
         self.reminder = Reminder(self)
 
-        # 兼容打包后资源路径
+        # ✅ 不设置 parent
         base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
         icon_path = os.path.join(base_path, 'assets', 'icon.ico')
-
-        self.tray_icon = QSystemTrayIcon(QIcon(icon_path), self)
+        self.tray_icon = QSystemTrayIcon(QIcon(icon_path))  # ❗关键：不要传 self
         self.tray_icon.setToolTip("喝水小助手")
 
-        # 托盘菜单
-        tray_menu = QMenu()
+        # ✅ 托盘菜单
+        self.menu = QMenu()
+        self.show_action = QAction("显示主界面")
+        self.quit_action = QAction("退出程序")
 
-        show_action = QAction("显示主界面")
-        quit_action = QAction("退出程序")
+        self.show_action.triggered.connect(self.show_window)
+        self.quit_action.triggered.connect(self.quit_app)
 
-        show_action.triggered.connect(self.show_window)
-        quit_action.triggered.connect(self.quit_app)
+        self.menu.addAction(self.show_action)
+        self.menu.addAction(self.quit_action)
 
-        tray_menu.addAction(show_action)
-        tray_menu.addAction(quit_action)
-
-        self.tray_icon.setContextMenu(tray_menu)
+        self.tray_icon.setContextMenu(self.menu)
         self.tray_icon.show()
 
-        # 托盘图标双击恢复窗口
-        self.tray_icon.activated.connect(self.on_tray_activated)
+        # ✅ 不绑定 activated 信号
+        # self.tray_icon.activated.connect(...)   ❌完全注释掉
 
-        # 启动时显示窗口（也可以改成self.hide()实现开机后台运行）
         self.show()
 
     def start_reminder(self):
@@ -67,7 +61,6 @@ class WaterReminderWindow(QWidget):
         content = self.text_edit.toPlainText().strip()
         if not content:
             content = "喝水时间到啦！多喝热水 ❤️"
-
         self.reminder.start(time, content)
         msg = QMessageBox(self)
         msg.setWindowTitle("提示")
@@ -76,25 +69,14 @@ class WaterReminderWindow(QWidget):
         msg.exec()
 
     def closeEvent(self, event):
-        """
-        重写窗口关闭事件，关闭时隐藏窗口到托盘，程序继续运行
-        """
-        event.ignore()  # 忽略关闭事件，不退出程序
-        self.hide()     # 隐藏窗口
+        event.ignore()
+        self.hide()
         self.tray_icon.showMessage(
             "喝水小助手",
-            "程序已最小化到托盘，双击图标可恢复窗口",
+            "程序已最小化到托盘，右键点击图标可操作",
             QSystemTrayIcon.MessageIcon.Information,
             3000
         )
-
-    def on_tray_activated(self, reason):
-        """
-        托盘图标被激活时（点击、双击等）
-        双击托盘图标恢复窗口
-        """
-        if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
-            self.show_window()
 
     def show_window(self):
         self.show()
