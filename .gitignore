@@ -1,4 +1,4 @@
 # 忽略 PyInstaller 构建输出
 build/
-dist/
 WaterReminder.spec
+WaterReminder.exe
