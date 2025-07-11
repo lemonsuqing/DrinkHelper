@@ -38,7 +38,7 @@ if errorlevel 1 (
 )
 
 REM 开始打包
-pyinstaller main.py --noconsole --onefile --add-data "assets\icon.ico;assets" --icon=assets\icon.ico --name=WaterReminder --distpath .
+pyinstaller source\main.py --noconsole --onefile --add-data "assets\icon.ico;assets" --icon=assets\icon.ico --name=WaterReminder --distpath .
 
 if errorlevel 1 (
     echo [ERROR] Build failed!

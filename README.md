@@ -44,7 +44,7 @@ pythonw main.py
 
 生成的可执行文件位置：
 
-* 默认在 `dist\WaterReminder.exe`
+* 默认在当前目录下 `WaterReminder.exe`
 
 ---
 
@@ -72,9 +72,10 @@ pythonw main.py
 ├── build.cmd             # 一键安装
 ├── Uninstall.cmd         # 一键清理
 ├── WaterReminder.exe     # 构建后生成的可执行文件
-├── gui.py                # 主窗口界面代码
-├── main.py               # 程序入口
-├── reminder.py           # 提醒逻辑代码
+├── source/               # 源码
+│   ├── gui.py            # 主窗口界面代码
+│   ├── main.py           # 程序入口
+│   └── reminder.py       # 提醒逻辑代码
 ├── tool/                 # 依赖wheel包，用于安装
 │   ├── pyqt6-xxx.whl
 │   └── pyinstaller-xxx.whl
