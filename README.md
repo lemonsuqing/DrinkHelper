@@ -118,32 +118,6 @@ A desktop water reminder application built with Python and PyQt6 to help you dev
 
 ---
 
-当然可以！下面是你的英文版 `README.md`，已完全翻译并保持原结构、术语与项目一致，同时保留了图像展示：
-
----
-
-# Water Reminder
-
-A desktop water reminder application built with Python and PyQt6 to help you develop healthy hydration habits.
-
----
-
-## Features
-
-- Set fixed-time water reminders
-- Customize reminder message
-- Always-on-top popup reminders
-- Runs in the system tray and supports background operation
-- Supports building as a standalone `.exe` (no command window)
-
----
-
-## Requirements
-
-- Python 3.7 or higher
-
----
-
 ## Installation & Usage
 
 ### 1. Install dependencies (if you want to run manually)
@@ -219,6 +193,6 @@ All rights reserved. Unauthorized reproduction or distribution is prohibited.
 ## If you'd like to buy me a coffee
 
 <img src="assets/Please_buy_me_a_coffee.png" width="200">
-```
 
 ---
+
