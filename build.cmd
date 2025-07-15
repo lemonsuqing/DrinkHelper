@@ -9,13 +9,13 @@ REM This build script is part of the WaterReminder project.
 REM Unauthorized copying or distribution is prohibited.
 REM ================================================
 
-REM 检查 Python 环境是否有 pyinstaller
+REM Check and install pyinstaller
 pip show pyinstaller >nul 2>nul
 if errorlevel 1 (
-    echo [INFO] pyinstaller not found, installing from local wheel...
-    pip install tool\pyinstaller-6.14.2-py3-none-win_arm64.whl
+    echo [INFO] pyinstaller not found, installing from PyPI...
+    pip install pyinstaller
     if errorlevel 1 (
-        echo [ERROR] Failed to install pyinstaller from local wheel!
+        echo [ERROR] Failed to install pyinstaller!
         pause
         exit /b
     )
@@ -23,13 +23,13 @@ if errorlevel 1 (
     echo [INFO] pyinstaller already installed.
 )
 
-REM 检查 Python 环境是否有 pyqt6
+REM Check and install PyQt6
 pip show PyQt6 >nul 2>nul
 if errorlevel 1 (
-    echo [INFO] PyQt6 not found, installing from local wheel...
-    pip install tool\pyqt6-6.9.1-cp39-abi3-win_arm64.whl
+    echo [INFO] PyQt6 not found, installing from PyPI...
+    pip install PyQt6
     if errorlevel 1 (
-        echo [ERROR] Failed to install PyQt6 from local wheel!
+        echo [ERROR] Failed to install PyQt6!
         pause
         exit /b
     )
@@ -37,7 +37,8 @@ if errorlevel 1 (
     echo [INFO] PyQt6 already installed.
 )
 
-REM 开始打包
+REM Start building
+echo [INFO] Building WaterReminder...
 pyinstaller source\main.py --noconsole --onefile --add-data "assets\icon.ico;assets" --icon=assets\icon.ico --name=WaterReminder --distpath .
 
 if errorlevel 1 (
@@ -45,6 +46,6 @@ if errorlevel 1 (
     pause
     exit /b
 ) else (
-    echo [OK] Build success, the file is in 'dist\WaterReminder.exe'
+    echo [OK] Build success, the file is in 'WaterReminder.exe'
     pause
 )
