@@ -3,3 +3,5 @@ build/
 WaterReminder.spec
 WaterReminder.exe
 .idea/
+source/__pycache__/
+*.pyc

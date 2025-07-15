@@ -2,13 +2,11 @@
  ================================================
  WaterReminder Build Script
  Copyright (c) 2025 Lemonsuqing. All rights reserved.
-
- This build script is part of the WaterReminder project.
- Unauthorized copying or distribution is prohibited.
  ================================================
 """
 import sys
 import os
+import winreg  # 🆕 用于操作注册表
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QTimeEdit, QTextEdit, QPushButton, QMessageBox,
     QSystemTrayIcon, QMenu, QApplication, QComboBox, QHBoxLayout, QSpinBox, QLabel
@@ -22,12 +20,11 @@ class WaterReminderWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("喝水小助手")
-        self.resize(400, 250)
+        self.resize(400, 280)
 
-        # 布局
         layout = QVBoxLayout()
 
-        # 周期选择
+        # 提醒周期选择
         period_layout = QHBoxLayout()
         period_layout.addWidget(QLabel("提醒周期:"))
         self.period_combo = QComboBox()
@@ -36,7 +33,7 @@ class WaterReminderWindow(QWidget):
         period_layout.addWidget(self.period_combo)
         layout.addLayout(period_layout)
 
-        # 时间输入区域
+        # 时间输入控件区域
         self.time_input_layout = QHBoxLayout()
         self.create_time_inputs()
         layout.addLayout(self.time_input_layout)
@@ -45,6 +42,15 @@ class WaterReminderWindow(QWidget):
         self.text_edit = QTextEdit()
         self.text_edit.setPlaceholderText("输入提醒内容")
         layout.addWidget(self.text_edit)
+
+        # 开机启动选项
+        startup_layout = QHBoxLayout()
+        startup_layout.addWidget(QLabel("开机启动:"))
+        self.startup_combo = QComboBox()
+        self.startup_combo.addItems(["否", "是"])
+        self.startup_combo.currentTextChanged.connect(self.update_startup_setting)
+        startup_layout.addWidget(self.startup_combo)
+        layout.addLayout(startup_layout)
 
         # 开始按钮
         self.start_btn = QPushButton("开始提醒")
@@ -65,20 +71,16 @@ class WaterReminderWindow(QWidget):
         self.menu = QMenu()
         self.show_action = QAction("显示主界面")
         self.quit_action = QAction("退出程序")
-
         self.show_action.triggered.connect(self.show_window)
         self.quit_action.triggered.connect(self.quit_app)
-
         self.menu.addAction(self.show_action)
         self.menu.addAction(self.quit_action)
-
         self.tray_icon.setContextMenu(self.menu)
         self.tray_icon.show()
 
         self.show()
 
     def create_time_inputs(self):
-        # 清除旧的小部件
         for i in reversed(range(self.time_input_layout.count())):
             self.time_input_layout.itemAt(i).widget().setParent(None)
 
@@ -141,6 +143,22 @@ class WaterReminderWindow(QWidget):
     def update_time_inputs(self):
         self.create_time_inputs()
 
+    def update_startup_setting(self, value):
+        app_name = "WaterReminder"
+        exe_path = os.path.abspath(sys.argv[0])
+        key = r"Software\Microsoft\Windows\CurrentVersion\Run"
+        try:
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key, 0, winreg.KEY_ALL_ACCESS) as regkey:
+                if value == "是":
+                    winreg.SetValueEx(regkey, app_name, 0, winreg.REG_SZ, exe_path)
+                elif value == "否":
+                    try:
+                        winreg.DeleteValue(regkey, app_name)
+                    except FileNotFoundError:
+                        pass
+        except Exception as e:
+            QMessageBox.warning(self, "开机启动设置失败", str(e))
+
     def start_reminder(self):
         period = self.period_combo.currentText()
         content = self.text_edit.toPlainText().strip() or "喝水时间到啦！多喝热水 ❤️"
@@ -148,35 +166,30 @@ class WaterReminderWindow(QWidget):
         if period == "每小时":
             minute = self.minute_spin.value()
             self.reminder.start_hourly(minute, content)
-            msg_text = f"提醒已设置为每小时 {minute} 分"
 
         elif period == "每日":
             time = self.time_edit.time()
             self.reminder.start_daily(time, content)
-            msg_text = f"提醒已设置为每天 {time.toString('HH:mm')}"
 
         elif period == "每周":
-            day = self.day_combo.currentIndex() + 1  # 1=周一, 7=周日
+            day = self.day_combo.currentIndex() + 1
             time = self.time_edit.time()
             self.reminder.start_weekly(day, time, content)
-            msg_text = f"提醒已设置为每周{['一', '二', '三', '四', '五', '六', '日'][day - 1]} {time.toString('HH:mm')}"
 
         elif period == "每月":
             day = self.day_spin.value()
             time = self.time_edit.time()
             self.reminder.start_monthly(day, time, content)
-            msg_text = f"提醒已设置为每月 {day} 日 {time.toString('HH:mm')}"
 
         elif period == "每年":
             month = self.month_spin.value()
             day = self.day_spin.value()
             time = self.time_edit.time()
             self.reminder.start_yearly(month, day, time, content)
-            msg_text = f"提醒已设置为每年 {month} 月 {day} 日 {time.toString('HH:mm')}"
 
         msg = QMessageBox(self)
         msg.setWindowTitle("提示")
-        msg.setText(msg_text)
+        msg.setText("提醒设置成功")
         msg.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint)
         msg.exec()
 
