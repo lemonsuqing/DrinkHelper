@@ -11,88 +11,89 @@ from PyQt6.QtCore import QTimer, QTime, Qt, QDate
 from PyQt6.QtWidgets import QMessageBox
 
 
+class ReminderTask:
+    def __init__(self):
+        self.period = ""  # "hourly", "daily", "weekly", "monthly", "yearly"
+        self.minute = 0   # for hourly
+        self.time = QTime()  # for daily, weekly, monthly, yearly
+        self.day = 1      # for weekly (1-7), monthly (1-31), yearly (1-31)
+        self.month = 1    # for yearly (1-12)
+        self.content = ""
+        self.enabled = True
+
+    def get_description(self):
+        if self.period == "每小时":
+            return f"每小时 {self.minute:02d} 分 - {self.content}"
+        elif self.period == "每日":
+            return f"每天 {self.time.toString('HH:mm')} - {self.content}"
+        elif self.period == "每周":
+            days = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
+            return f"每周 {days[self.day-1]} {self.time.toString('HH:mm')} - {self.content}"
+        elif self.period == "每月":
+            return f"每月 {self.day} 日 {self.time.toString('HH:mm')} - {self.content}"
+        elif self.period == "每年":
+            return f"每年 {self.month} 月 {self.day} 日 {self.time.toString('HH:mm')} - {self.content}"
+        return ""
+
+
 class Reminder:
     def __init__(self, parent):
         self.parent = parent
         self.timer = QTimer()
-        self.timer.timeout.connect(self.check_time)
-        self.reminder_type = None
-        self.reminder_params = {}
-        self.reminder_content = ""
-        self.last_reminded_day = -1  # 用于每日检查
-
-    def start_hourly(self, minute, content):
-        self.reminder_type = "hourly"
-        self.reminder_params = {"minute": minute}
-        self.reminder_content = content
+        self.timer.timeout.connect(self.check_tasks)
         self.timer.start(1000)  # 每秒检查一次
+        self.tasks = []
 
-    def start_daily(self, time, content):
-        self.reminder_type = "daily"
-        self.reminder_params = {"time": time}
-        self.reminder_content = content
-        self.timer.start(1000)
+    def add_task(self, task):
+        self.tasks.append(task)
 
-    def start_weekly(self, day, time, content):
-        self.reminder_type = "weekly"
-        self.reminder_params = {"day": day, "time": time}
-        self.reminder_content = content
-        self.timer.start(1000)
+    def remove_task(self, index):
+        if 0 <= index < len(self.tasks):
+            self.tasks.pop(index)
 
-    def start_monthly(self, day, time, content):
-        self.reminder_type = "monthly"
-        self.reminder_params = {"day": day, "time": time}
-        self.reminder_content = content
-        self.timer.start(1000)
-
-    def start_yearly(self, month, day, time, content):
-        self.reminder_type = "yearly"
-        self.reminder_params = {"month": month, "day": day, "time": time}
-        self.reminder_content = content
-        self.timer.start(1000)
-
-    def stop(self):
-        self.timer.stop()
-
-    def check_time(self):
+    def check_tasks(self):
         now = QTime.currentTime()
         today = QDate.currentDate()
 
-        if self.reminder_type == "hourly":
-            if now.minute() == self.reminder_params["minute"] and now.second() == 0:
-                self.show_reminder()
+        for task in self.tasks:
+            if not task.enabled:
+                continue
 
-        elif self.reminder_type == "daily":
-            if (now.hour() == self.reminder_params["time"].hour() and
-                    now.minute() == self.reminder_params["time"].minute() and
-                    now.second() == 0):
-                self.show_reminder()
+            if task.period == "每小时":
+                if now.minute() == task.minute and now.second() == 0:
+                    self.show_reminder(task.content)
 
-        elif self.reminder_type == "weekly":
-            if (today.dayOfWeek() == self.reminder_params["day"] and
-                    now.hour() == self.reminder_params["time"].hour() and
-                    now.minute() == self.reminder_params["time"].minute() and
-                    now.second() == 0):
-                self.show_reminder()
+            elif task.period == "每日":
+                if (now.hour() == task.time.hour() and
+                        now.minute() == task.time.minute() and
+                        now.second() == 0):
+                    self.show_reminder(task.content)
 
-        elif self.reminder_type == "monthly":
-            if (today.day() == self.reminder_params["day"] and
-                    now.hour() == self.reminder_params["time"].hour() and
-                    now.minute() == self.reminder_params["time"].minute() and
-                    now.second() == 0):
-                self.show_reminder()
+            elif task.period == "每周":
+                if (today.dayOfWeek() == task.day and
+                        now.hour() == task.time.hour() and
+                        now.minute() == task.time.minute() and
+                        now.second() == 0):
+                    self.show_reminder(task.content)
 
-        elif self.reminder_type == "yearly":
-            if (today.month() == self.reminder_params["month"] and
-                    today.day() == self.reminder_params["day"] and
-                    now.hour() == self.reminder_params["time"].hour() and
-                    now.minute() == self.reminder_params["time"].minute() and
-                    now.second() == 0):
-                self.show_reminder()
+            elif task.period == "每月":
+                if (today.day() == task.day and
+                        now.hour() == task.time.hour() and
+                        now.minute() == task.time.minute() and
+                        now.second() == 0):
+                    self.show_reminder(task.content)
 
-    def show_reminder(self):
+            elif task.period == "每年":
+                if (today.month() == task.month and
+                        today.day() == task.day and
+                        now.hour() == task.time.hour() and
+                        now.minute() == task.time.minute() and
+                        now.second() == 0):
+                    self.show_reminder(task.content)
+
+    def show_reminder(self, content):
         msg = QMessageBox(self.parent)
         msg.setWindowTitle("喝水提醒")
-        msg.setText(self.reminder_content)
+        msg.setText(content)
         msg.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint)
         msg.exec()

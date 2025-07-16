@@ -2,27 +2,80 @@
  ================================================
  WaterReminder Build Script
  Copyright (c) 2025 Lemonsuqing. All rights reserved.
+
+ This build script is part of the WaterReminder project.
+ Unauthorized copying or distribution is prohibited.
  ================================================
 """
 import sys
 import os
-import winreg  # 🆕 用于操作注册表
+import winreg
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QTimeEdit, QTextEdit, QPushButton, QMessageBox,
-    QSystemTrayIcon, QMenu, QApplication, QComboBox, QHBoxLayout, QSpinBox, QLabel
+    QSystemTrayIcon, QMenu, QApplication, QComboBox, QHBoxLayout, 
+    QSpinBox, QLabel, QStackedWidget, QListWidget, QListWidgetItem, QAbstractItemView
 )
 from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtCore import QTime, Qt, QDate
-from reminder import Reminder
+from reminder import Reminder, ReminderTask
 
 
 class WaterReminderWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("喝水小助手")
-        self.resize(400, 280)
+        self.resize(600, 400)
 
+        # 使用堆叠布局来切换主界面和任务列表界面
+        self.stacked_widget = QStackedWidget()
+        
+        # 创建主界面
+        self.main_widget = QWidget()
+        self.setup_main_ui()
+        
+        # 创建任务列表界面
+        self.task_list_widget = QWidget()
+        self.setup_task_list_ui()
+        
+        # 添加到堆叠布局
+        self.stacked_widget.addWidget(self.main_widget)
+        self.stacked_widget.addWidget(self.task_list_widget)
+        
+        # 主布局
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(self.stacked_widget)
+        self.setLayout(main_layout)
+
+        self.reminder = Reminder(self)
+
+        # 系统托盘
+        base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+        icon_path = os.path.join(base_path, 'assets', 'icon.ico')
+        self.tray_icon = QSystemTrayIcon(QIcon(icon_path))
+        self.tray_icon.setToolTip("喝水小助手")
+
+        # 托盘菜单
+        self.menu = QMenu()
+        self.show_action = QAction("显示主界面")
+        self.quit_action = QAction("退出程序")
+        self.show_action.triggered.connect(self.show_window)
+        self.quit_action.triggered.connect(self.quit_app)
+        self.menu.addAction(self.show_action)
+        self.menu.addAction(self.quit_action)
+        self.tray_icon.setContextMenu(self.menu)
+        self.tray_icon.show()
+
+        self.show()
+
+    def setup_main_ui(self):
         layout = QVBoxLayout()
+
+        # 顶部按钮栏
+        top_btn_layout = QHBoxLayout()
+        self.task_list_btn = QPushButton("查看提醒任务")
+        self.task_list_btn.clicked.connect(self.show_task_list)
+        top_btn_layout.addWidget(self.task_list_btn)
+        layout.addLayout(top_btn_layout)
 
         # 提醒周期选择
         period_layout = QHBoxLayout()
@@ -53,32 +106,41 @@ class WaterReminderWindow(QWidget):
         layout.addLayout(startup_layout)
 
         # 开始按钮
-        self.start_btn = QPushButton("开始提醒")
-        self.start_btn.clicked.connect(self.start_reminder)
+        self.start_btn = QPushButton("添加提醒")
+        self.start_btn.clicked.connect(self.add_reminder)
         layout.addWidget(self.start_btn)
 
-        self.setLayout(layout)
+        self.main_widget.setLayout(layout)
 
-        self.reminder = Reminder(self)
+    def setup_task_list_ui(self):
+        layout = QVBoxLayout()
 
-        # 系统托盘
-        base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
-        icon_path = os.path.join(base_path, 'assets', 'icon.ico')
-        self.tray_icon = QSystemTrayIcon(QIcon(icon_path))
-        self.tray_icon.setToolTip("喝水小助手")
+        # 顶部按钮栏
+        top_btn_layout = QHBoxLayout()
+        self.back_btn = QPushButton("返回主界面")
+        self.back_btn.clicked.connect(self.show_main)
+        top_btn_layout.addWidget(self.back_btn)
+        layout.addLayout(top_btn_layout)
 
-        # 托盘菜单
-        self.menu = QMenu()
-        self.show_action = QAction("显示主界面")
-        self.quit_action = QAction("退出程序")
-        self.show_action.triggered.connect(self.show_window)
-        self.quit_action.triggered.connect(self.quit_app)
-        self.menu.addAction(self.show_action)
-        self.menu.addAction(self.quit_action)
-        self.tray_icon.setContextMenu(self.menu)
-        self.tray_icon.show()
+        # 任务列表
+        self.task_list = QListWidget()
+        self.task_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        layout.addWidget(self.task_list)
 
-        self.show()
+        # 操作按钮
+        btn_layout = QHBoxLayout()
+        self.edit_btn = QPushButton("编辑任务")
+        self.edit_btn.clicked.connect(self.edit_task)
+        self.delete_btn = QPushButton("删除任务")
+        self.delete_btn.clicked.connect(self.delete_task)
+        self.toggle_btn = QPushButton("暂停/启用")
+        self.toggle_btn.clicked.connect(self.toggle_task)
+        btn_layout.addWidget(self.edit_btn)
+        btn_layout.addWidget(self.delete_btn)
+        btn_layout.addWidget(self.toggle_btn)
+        layout.addLayout(btn_layout)
+
+        self.task_list_widget.setLayout(layout)
 
     def create_time_inputs(self):
         for i in reversed(range(self.time_input_layout.count())):
@@ -159,39 +221,110 @@ class WaterReminderWindow(QWidget):
         except Exception as e:
             QMessageBox.warning(self, "开机启动设置失败", str(e))
 
-    def start_reminder(self):
+    def add_reminder(self):
         period = self.period_combo.currentText()
         content = self.text_edit.toPlainText().strip() or "喝水时间到啦！多喝热水 ❤️"
 
+        task = ReminderTask()
+        task.period = period
+        task.content = content
+        task.enabled = True
+
         if period == "每小时":
-            minute = self.minute_spin.value()
-            self.reminder.start_hourly(minute, content)
-
+            task.minute = self.minute_spin.value()
         elif period == "每日":
-            time = self.time_edit.time()
-            self.reminder.start_daily(time, content)
-
+            task.time = self.time_edit.time()
         elif period == "每周":
-            day = self.day_combo.currentIndex() + 1
-            time = self.time_edit.time()
-            self.reminder.start_weekly(day, time, content)
-
+            task.day = self.day_combo.currentIndex() + 1
+            task.time = self.time_edit.time()
         elif period == "每月":
-            day = self.day_spin.value()
-            time = self.time_edit.time()
-            self.reminder.start_monthly(day, time, content)
-
+            task.day = self.day_spin.value()
+            task.time = self.time_edit.time()
         elif period == "每年":
-            month = self.month_spin.value()
-            day = self.day_spin.value()
-            time = self.time_edit.time()
-            self.reminder.start_yearly(month, day, time, content)
+            task.month = self.month_spin.value()
+            task.day = self.day_spin.value()
+            task.time = self.time_edit.time()
 
-        msg = QMessageBox(self)
-        msg.setWindowTitle("提示")
-        msg.setText("提醒设置成功")
-        msg.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint)
-        msg.exec()
+        self.reminder.add_task(task)
+        self.update_task_list()
+        
+        QMessageBox.information(self, "提示", "提醒任务已添加")
+        self.text_edit.clear()
+
+    def show_task_list(self):
+        self.update_task_list()
+        self.stacked_widget.setCurrentIndex(1)
+
+    def show_main(self):
+        self.stacked_widget.setCurrentIndex(0)
+
+    def update_task_list(self):
+        self.task_list.clear()
+        for i, task in enumerate(self.reminder.tasks):
+            item = QListWidgetItem()
+            status = "✓" if task.enabled else "✗"
+            text = f"[{status}] {task.get_description()}"
+            item.setText(text)
+            item.setData(Qt.ItemDataRole.UserRole, i)  # 存储任务索引
+            self.task_list.addItem(item)
+
+    def get_selected_task_index(self):
+        selected_items = self.task_list.selectedItems()
+        if not selected_items:
+            QMessageBox.warning(self, "警告", "请先选择一个任务")
+            return None
+        return selected_items[0].data(Qt.ItemDataRole.UserRole)
+
+    def edit_task(self):
+        index = self.get_selected_task_index()
+        if index is None:
+            return
+            
+        task = self.reminder.tasks[index]
+        # 这里可以打开一个编辑对话框，简化起见，我们直接在主界面编辑
+        self.show_main()
+        self.period_combo.setCurrentText(task.period)
+        
+        if task.period == "每小时":
+            self.minute_spin.setValue(task.minute)
+        elif task.period == "每日":
+            self.time_edit.setTime(task.time)
+        elif task.period == "每周":
+            self.day_combo.setCurrentIndex(task.day - 1)
+            self.time_edit.setTime(task.time)
+        elif task.period == "每月":
+            self.day_spin.setValue(task.day)
+            self.time_edit.setTime(task.time)
+        elif task.period == "每年":
+            self.month_spin.setValue(task.month)
+            self.day_spin.setValue(task.day)
+            self.time_edit.setTime(task.time)
+            
+        self.text_edit.setPlainText(task.content)
+        self.reminder.remove_task(index)
+        self.start_btn.setText("更新提醒")
+
+    def delete_task(self):
+        index = self.get_selected_task_index()
+        if index is None:
+            return
+            
+        reply = QMessageBox.question(
+            self, "确认删除", "确定要删除这个提醒任务吗?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            self.reminder.remove_task(index)
+            self.update_task_list()
+
+    def toggle_task(self):
+        index = self.get_selected_task_index()
+        if index is None:
+            return
+            
+        task = self.reminder.tasks[index]
+        task.enabled = not task.enabled
+        self.update_task_list()
 
     def closeEvent(self, event):
         event.ignore()
