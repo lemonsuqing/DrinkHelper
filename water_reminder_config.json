@@ -1,0 +1,23 @@
+{
+  "tasks": [
+    {
+      "period": "每小时",
+      "content": "喝水时间到啦！多喝热水 ❤️",
+      "enabled": true,
+      "minute": 30
+    },
+    {
+      "period": "每日",
+      "content": "下班啦下班啦~记得下班打卡👌😊",
+      "enabled": true,
+      "time": "18:00"
+    },
+    {
+      "period": "每日",
+      "content": "上班打卡",
+      "enabled": true,
+      "time": "09:00"
+    }
+  ],
+  "startup_enabled": true
+}

@@ -76,9 +76,6 @@ pythonw main.py
 │   ├── gui.py            # 主窗口界面代码
 │   ├── main.py           # 程序入口
 │   └── reminder.py       # 提醒逻辑代码
-├── tool/                 # 依赖wheel包，用于安装
-│   ├── pyqt6-xxx.whl
-│   └── pyinstaller-xxx.whl
 └── README.md             # 项目说明文档
 ```
 
@@ -175,9 +172,6 @@ Run `Uninstall.cmd` to delete all intermediate build files and the generated `.e
 │   ├── gui.py            # GUI logic
 │   ├── main.py           # Application entry point
 │   └── reminder.py       # Reminder logic
-├── tool/                 # Wheel files for offline install
-│   ├── pyqt6-xxx.whl
-│   └── pyinstaller-xxx.whl
 └── README.md             # Project documentation
 ```
 
