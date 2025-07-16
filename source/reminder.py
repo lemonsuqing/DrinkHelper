@@ -1,3 +1,12 @@
+"""
+ ================================================
+ WaterReminder Build Script
+ Copyright (c) 2025 Lemonsuqing. All rights reserved.
+
+ This build script is part of the WaterReminder project.
+ Unauthorized copying or distribution is prohibited.
+ ================================================
+"""
 from PyQt6.QtCore import QTimer, QTime, Qt, QDate
 from PyQt6.QtWidgets import QMessageBox
 import json
