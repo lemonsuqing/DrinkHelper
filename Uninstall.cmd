@@ -2,11 +2,8 @@
 cd /d %~dp0
 
 REM ================================================
-REM WaterReminder Build Script
+REM WaterReminder Uninstall Script
 REM Copyright (c) 2025 Lemonsuqing. All rights reserved.
-REM
-REM This build script is part of the WaterReminder project.
-REM Unauthorized copying or distribution is prohibited.
 REM ================================================
 
 echo ===============================
@@ -43,6 +40,14 @@ if exist WaterReminder.exe (
     echo Deleted WaterReminder.exe file
 ) else (
     echo WaterReminder.exe file does not exist
+)
+
+REM Delete water_reminder_config.json file
+if exist water_reminder_config.json (
+    del /f water_reminder_config.json
+    echo Deleted water_reminder_config.json
+) else (
+    echo water_reminder_config.json does not exist
 )
 
 echo ===============================
