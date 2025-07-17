@@ -1,9 +1,9 @@
 """
  ================================================
- WaterReminder Build Script
+ WaterReminder source code
  Copyright (c) 2025 Lemonsuqing. All rights reserved.
 
- This build script is part of the WaterReminder project.
+ This code is part of the WaterReminder project.
  Unauthorized copying or distribution is prohibited.
  ================================================
 """

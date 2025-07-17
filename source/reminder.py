@@ -1,11 +1,11 @@
 """
-================================================
- WaterReminder - Reminder Module
+ ================================================
+ WaterReminder source code
  Copyright (c) 2025 Lemonsuqing. All rights reserved.
 
- This module handles the reminder logic and task management.
+ This code is part of the WaterReminder project.
  Unauthorized copying or distribution is prohibited.
-================================================
+ ================================================
 """
 import json
 import os
