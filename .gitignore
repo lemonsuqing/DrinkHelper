@@ -5,4 +5,5 @@ WaterReminder.exe
 .idea/
 source/__pycache__/
 source/water_reminder_config.json
+water_reminder_config.json
 *.pyc
